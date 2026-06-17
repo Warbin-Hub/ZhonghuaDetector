@@ -153,12 +153,12 @@ final class CameraModel: NSObject, ObservableObject, AVCaptureVideoDataOutputSam
                 guard obs.labels.first?.identifier == "zhonghua",
                       obs.confidence > 0.3 else { return nil }
                 let bbox = obs.boundingBox
-                let scale = max(screenW / bbox.width, screenH / bbox.height)
-                let vw = bbox.width * scale
-                let vh = bbox.height * scale
-                let x = (screenW - vw) / 2 + (1 - bbox.maxY) * vw
-                let y = (screenH - vh) / 2 + bbox.minX * vh
-                return Detection(boundingBox: CGRect(x: x, y: y, width: vw, height: vh), confidence: obs.confidence)
+                // Direct mapping: Vision coords are 0-1, origin bottom-left
+                let x = bbox.minX * screenW
+                let y = (1 - bbox.maxY) * screenH
+                let w = bbox.width * screenW
+                let h = bbox.height * screenH
+                return Detection(boundingBox: CGRect(x: x, y: y, width: w, height: h), confidence: obs.confidence)
             }
             Task { @MainActor [weak self] in
                 self?.detections = dets
