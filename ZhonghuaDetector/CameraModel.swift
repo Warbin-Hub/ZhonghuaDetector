@@ -19,6 +19,7 @@ final class CameraModel: NSObject, ObservableObject, AVCaptureVideoDataOutputSam
     @Published var fps: Double = 0
     @Published var cameraReady = false
     @Published var modelReady = false
+    var previewSize: CGSize = .zero
 
     private let modelHolder = ModelHolder()
     private var fpsCounter: Int = 0
@@ -144,12 +145,26 @@ final class CameraModel: NSObject, ObservableObject, AVCaptureVideoDataOutputSam
 
         Task { @MainActor in self.fpsCounter += 1 }
 
-        let request = VNCoreMLRequest(model: vnModel) { req, _ in
+        let request = VNCoreMLRequest(model: vnModel) { [weak self] req, _ in
+            guard let self else { return }
             guard let results = req.results as? [VNRecognizedObjectObservation] else { return }
+            let ps = Task { @MainActor in self.previewSize }.value
+            // Actually, capture self.previewSize directly since we're already capturing self
             let dets = results.compactMap { obs -> Detection? in
                 guard obs.labels.first?.identifier == "zhonghua",
                       obs.confidence > 0.3 else { return nil }
-                return Detection(boundingBox: obs.boundingBox, confidence: obs.confidence)
+                // Convert Vision coords (bottom-left origin, 0-1) to screen coords (top-left, points)
+                let bbox = obs.boundingBox
+                let screenW = self.previewSize.width
+                let screenH = self.previewSize.height
+                // Scale to fill screen (matches .resizeAspectFill)
+                let scale = max(screenW / bbox.width, screenH / bbox.height)
+                let vw = bbox.width * scale
+                let vh = bbox.height * scale
+                let x = (screenW - vw) / 2 + (1 - bbox.maxY) * vw
+                let y = (screenH - vh) / 2 + bbox.minX * vh
+                let r = CGRect(x: x, y: y, width: vw, height: vh)
+                return Detection(boundingBox: r, confidence: obs.confidence)
             }
             Task { @MainActor [weak self] in
                 self?.detections = dets
@@ -159,17 +174,4 @@ final class CameraModel: NSObject, ObservableObject, AVCaptureVideoDataOutputSam
         try? VNImageRequestHandler(cvPixelBuffer: pixelBuffer, options: [:]).perform([request])
     }
 
-    func visionToScreen(_ rect: CGRect) -> CGRect {
-        let screenW = UIScreen.main.bounds.width
-        let screenH = UIScreen.main.bounds.height
-        let scale = max(screenW / rect.height, screenH / rect.width)
-        let viewW = rect.height * scale
-        let viewH = rect.width * scale
-        return CGRect(
-            x: (screenW - viewW) / 2 + (1 - rect.maxY) * viewW,
-            y: (screenH - viewH) / 2 + rect.minX * viewH,
-            width: viewW,
-            height: viewH
-        )
-    }
 }

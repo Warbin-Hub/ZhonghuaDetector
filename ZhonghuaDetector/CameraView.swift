@@ -6,20 +6,23 @@ struct CameraView: View {
 
     var body: some View {
         ZStack {
-            CameraPreview(session: model.session).ignoresSafeArea()
+            GeometryReader { geo in
+                CameraPreview(session: model.session)
+                    .onAppear { model.previewSize = geo.size }
+                    .onChange(of: geo.size) { model.previewSize = $0 }
+            }.ignoresSafeArea()
 
             ForEach(model.detections, id: \.id) { det in
-                let rect = model.visionToScreen(det.boundingBox)
                 RoundedRectangle(cornerRadius: 4)
                     .stroke(.green, lineWidth: 3)
-                    .frame(width: rect.width, height: rect.height)
-                    .position(x: rect.midX, y: rect.midY)
+                    .frame(width: det.boundingBox.width, height: det.boundingBox.height)
+                    .position(x: det.boundingBox.midX, y: det.boundingBox.midY)
                 Text(String(format: "%.0f%%", det.confidence * 100))
                     .font(.system(size: 12, weight: .bold))
                     .foregroundColor(.black)
                     .padding(.horizontal, 6).padding(.vertical, 2)
                     .background(.green).cornerRadius(3)
-                    .position(x: rect.minX + 30, y: rect.minY - 10)
+                    .position(x: det.boundingBox.minX + 30, y: det.boundingBox.minY - 10)
             }
 
             VStack {
