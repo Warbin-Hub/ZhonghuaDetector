@@ -153,14 +153,16 @@ final class CameraModel: NSObject, ObservableObject, AVCaptureVideoDataOutputSam
             let dets = results.compactMap { obs -> Detection? in
                 guard obs.labels.first?.identifier == "zhonghua",
                       obs.confidence > 0.3 else { return nil }
-                let rect = layer.layerRectConverted(fromMetadataOutputRect: obs.boundingBox)
+                let flipped = CGRect(x: obs.boundingBox.minX, y: 1 - obs.boundingBox.maxY,
+                                     width: obs.boundingBox.width, height: obs.boundingBox.height)
+                let rect = layer.layerRectConverted(fromMetadataOutputRect: flipped)
                 return Detection(boundingBox: rect, confidence: obs.confidence)
             }
             Task { @MainActor [weak self] in
                 self?.detections = dets
             }
         }
-        request.imageCropAndScaleOption = .centerCrop
+        request.imageCropAndScaleOption = .scaleFit
         try? VNImageRequestHandler(cvPixelBuffer: pixelBuffer, options: [:]).perform([request])
     }
 
