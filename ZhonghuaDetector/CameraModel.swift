@@ -1,5 +1,6 @@
 import AVFoundation
 import Vision
+import UIKit
 
 struct Detection: Identifiable {
     let id = UUID()
@@ -111,16 +112,13 @@ final class CameraModel: NSObject, ObservableObject, AVCaptureVideoDataOutputSam
     }
 
     func visionToScreen(_ rect: CGRect) -> CGRect {
-        let w = UIScreen.main.bounds.width
-        let h = UIScreen.main.bounds.height
-        let scale = max(w / rect.height, h / rect.width)
-        let vw = rect.height * scale
-        let vh = rect.width * scale
-        return CGRect(
-            x: (w - vw) / 2 + (1 - rect.maxY) * vw,
-            y: (h - vh) / 2 + rect.minX * vh,
-            width: vw,
-            height: vh
-        )
+        let screenW = UIScreen.main.bounds.width
+        let screenH = UIScreen.main.bounds.height
+        let scale = max(screenW / rect.height, screenH / rect.width)
+        let viewW = rect.height * scale
+        let viewH = rect.width * scale
+        let x = (screenW - viewW) / 2 + (1 - rect.maxY) * viewW
+        let y = (screenH - viewH) / 2 + rect.minX * viewH
+        return CGRect(x: x, y: y, width: viewW, height: viewH)
     }
 }
