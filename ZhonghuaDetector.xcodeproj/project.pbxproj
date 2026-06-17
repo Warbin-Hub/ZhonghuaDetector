@@ -17,7 +17,7 @@
 		A20001 /* ZhonghuaDetectorApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ZhonghuaDetectorApp.swift; sourceTree = "<group>"; };
 		A20002 /* CameraView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CameraView.swift; sourceTree = "<group>"; };
 		A20003 /* CameraModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CameraModel.swift; sourceTree = "<group>"; };
-		A20004 /* best.mlpackage */ = {isa = PBXFileReference; lastKnownFileType = file.mlmodel; path = best.mlpackage; sourceTree = "<group>"; };
+		A20004 /* best.mlpackage */ = {isa = PBXFileReference; lastKnownFileType = wrapper.mlpackage; path = best.mlpackage; sourceTree = "<group>"; };
 		A20005 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		A30001 /* ZhonghuaDetector.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = ZhonghuaDetector.app; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
