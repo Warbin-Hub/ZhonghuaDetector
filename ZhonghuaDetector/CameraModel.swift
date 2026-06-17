@@ -148,14 +148,14 @@ final class CameraModel: NSObject, ObservableObject, AVCaptureVideoDataOutputSam
             guard let results = req.results as? [VNRecognizedObjectObservation] else { return }
             let dets = results.compactMap { obs -> Detection? in
                 guard obs.labels.first?.identifier == "zhonghua",
-                      obs.confidence > 0.5 else { return nil }
+                      obs.confidence > 0.3 else { return nil }
                 return Detection(boundingBox: obs.boundingBox, confidence: obs.confidence)
             }
             Task { @MainActor [weak self] in
                 self?.detections = dets
             }
         }
-        request.imageCropAndScaleOption = .scaleFill
+        request.imageCropAndScaleOption = .centerCrop
         try? VNImageRequestHandler(cvPixelBuffer: pixelBuffer, options: [:]).perform([request])
     }
 
