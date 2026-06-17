@@ -7,10 +7,10 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
-		A10001 /* ZhonghuaDetectorApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20001; };
-		A10002 /* CameraView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20002; };
-		A10003 /* CameraModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20003; };
-		A10004 /* best.mlpackage in Resources */ = {isa = PBXBuildFile; fileRef = A20004; };
+		A10001 /* ZhonghuaDetectorApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20001 /* ZhonghuaDetectorApp.swift */; };
+		A10002 /* CameraView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20002 /* CameraView.swift */; };
+		A10003 /* CameraModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20003 /* CameraModel.swift */; };
+		A10004 /* best.mlpackage in Resources */ = {isa = PBXBuildFile; fileRef = A20004 /* best.mlpackage */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -64,7 +64,7 @@
 /* Begin PBXNativeTarget section */
 		T10001 /* ZhonghuaDetector */ = {
 			isa = PBXNativeTarget;
-			buildConfigurationList = C20001;
+			buildConfigurationList = C20001 /* Build configuration list for PBXNativeTarget "ZhonghuaDetector" */;
 			buildPhases = (
 				B10001 /* Sources */,
 				B10002 /* Resources */,
@@ -93,7 +93,7 @@
 					};
 				};
 			};
-			buildConfigurationList = C20002;
+			buildConfigurationList = C20002 /* Build configuration list for PBXProject "ZhonghuaDetector" */;
 			compatibilityVersion = "Xcode 14.0";
 			developmentRegion = en;
 			hasScannedForEncodings = 0;
@@ -192,6 +192,7 @@
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = GVC6PHA8R6;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = ZhonghuaDetector/Info.plist;
 				INFOPLIST_KEY_NSCameraUsageDescription = "需要摄像头来检测中华烟盒";
@@ -219,6 +220,7 @@
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = GVC6PHA8R6;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = ZhonghuaDetector/Info.plist;
 				INFOPLIST_KEY_NSCameraUsageDescription = "需要摄像头来检测中华烟盒";
@@ -243,23 +245,23 @@
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
-		C20001 /* Build config for T10001 */ = {
+		C20001 /* Build configuration list for PBXNativeTarget "ZhonghuaDetector" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
 				CFG_TARGET_DEBUG /* Debug */,
 				CFG_TARGET_RELEASE /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
-			defaultConfigurationName = Release;
+			defaultConfigurationName = Debug;
 		};
-		C20002 /* Build config for P10001 */ = {
+		C20002 /* Build configuration list for PBXProject "ZhonghuaDetector" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
 				CFG_DEBUG /* Debug */,
 				CFG_RELEASE /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
-			defaultConfigurationName = Release;
+			defaultConfigurationName = Debug;
 		};
 /* End XCConfigurationList section */
 	};

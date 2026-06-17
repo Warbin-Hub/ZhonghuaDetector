@@ -8,7 +8,6 @@ struct Detection: Identifiable {
     let confidence: Float
 }
 
-/// Thread-safe holder for VNCoreMLModel (which is already thread-safe per Apple docs)
 final class ModelHolder: @unchecked Sendable {
     var model: VNCoreMLModel?
 }
@@ -18,6 +17,8 @@ final class CameraModel: NSObject, ObservableObject, AVCaptureVideoDataOutputSam
     let session = AVCaptureSession()
     @Published var detections: [Detection] = []
     @Published var fps: Double = 0
+    @Published var cameraReady = false
+    @Published var modelReady = false
 
     private let modelHolder = ModelHolder()
     private var fpsCounter: Int = 0
@@ -25,8 +26,14 @@ final class CameraModel: NSObject, ObservableObject, AVCaptureVideoDataOutputSam
 
     func start() async {
         let status = AVCaptureDevice.authorizationStatus(for: .video)
-        if status != .authorized {
-            guard await AVCaptureDevice.requestAccess(for: .video) else { return }
+        if status == .notDetermined {
+            guard await AVCaptureDevice.requestAccess(for: .video) else {
+                print("Camera permission denied")
+                return
+            }
+        } else if status != .authorized {
+            print("Camera not authorized: \(status)")
+            return
         }
         loadModel()
         setupCamera()
@@ -34,27 +41,37 @@ final class CameraModel: NSObject, ObservableObject, AVCaptureVideoDataOutputSam
 
     private func loadModel() {
         guard let url = Bundle.main.url(forResource: "best", withExtension: "mlpackage") else {
-            print("best.mlpackage not in bundle")
+            print("Model file not found in bundle")
             return
         }
-        guard let compiledURL = try? MLModel.compileModel(at: url),
-              let mlModel = try? MLModel(contentsOf: compiledURL),
-              let vnModel = try? VNCoreMLModel(for: mlModel) else {
-            print("Model load failed")
-            return
+        do {
+            let compiledURL = try MLModel.compileModel(at: url)
+            let mlModel = try MLModel(contentsOf: compiledURL)
+            modelHolder.model = try VNCoreMLModel(for: mlModel)
+            modelReady = true
+            print("Model loaded OK")
+        } catch {
+            print("Model load error: \(error)")
         }
-        modelHolder.model = vnModel
-        print("Model ready")
     }
 
     private func setupCamera() {
+        guard let device = AVCaptureDevice.default(.builtInWideAngleCamera, for: .video, position: .back) else {
+            print("No back camera found")
+            return
+        }
         session.beginConfiguration()
-        session.sessionPreset = .hd1920x1080
+        session.sessionPreset = .vga640x480
 
-        guard let device = AVCaptureDevice.default(.builtInWideAngleCamera, for: .video, position: .back),
-              let input = try? AVCaptureDeviceInput(device: device),
-              session.canAddInput(input) else {
-            session.commitConfiguration(); return
+        guard let input = try? AVCaptureDeviceInput(device: device) else {
+            print("Failed to create camera input")
+            session.commitConfiguration()
+            return
+        }
+        guard session.canAddInput(input) else {
+            print("Cannot add camera input")
+            session.commitConfiguration()
+            return
         }
         session.addInput(input)
 
@@ -62,17 +79,29 @@ final class CameraModel: NSObject, ObservableObject, AVCaptureVideoDataOutputSam
         output.videoSettings = [kCVPixelBufferPixelFormatTypeKey as String: kCVPixelFormatType_32BGRA]
         output.alwaysDiscardsLateVideoFrames = true
         output.setSampleBufferDelegate(self, queue: DispatchQueue(label: "inference", qos: .userInteractive))
-        guard session.canAddOutput(output) else { session.commitConfiguration(); return }
+
+        guard session.canAddOutput(output) else {
+            print("Cannot add video output")
+            session.commitConfiguration()
+            return
+        }
         session.addOutput(output)
 
         if let conn = output.connection(with: .video) {
-            conn.videoRotationAngle = 90
-            conn.isVideoMirrored = false
+            if #available(iOS 17.0, *) {
+                conn.videoRotationAngle = 0
+            }
         }
 
         session.commitConfiguration()
+        print("Camera configured, starting session...")
+
         DispatchQueue.global(qos: .userInitiated).async { [weak self] in
             self?.session.startRunning()
+            Task { @MainActor [weak self] in
+                self?.cameraReady = true
+                print("Camera session running")
+            }
         }
 
         fpsTimer = Timer.scheduledTimer(withTimeInterval: 1, repeats: true) { [weak self] _ in
@@ -117,8 +146,11 @@ final class CameraModel: NSObject, ObservableObject, AVCaptureVideoDataOutputSam
         let scale = max(screenW / rect.height, screenH / rect.width)
         let viewW = rect.height * scale
         let viewH = rect.width * scale
-        let x = (screenW - viewW) / 2 + (1 - rect.maxY) * viewW
-        let y = (screenH - viewH) / 2 + rect.minX * viewH
-        return CGRect(x: x, y: y, width: viewW, height: viewH)
+        return CGRect(
+            x: (screenW - viewW) / 2 + (1 - rect.maxY) * viewW,
+            y: (screenH - viewH) / 2 + rect.minX * viewH,
+            width: viewW,
+            height: viewH
+        )
     }
 }
