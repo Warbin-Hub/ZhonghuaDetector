@@ -83,7 +83,7 @@ final class CameraModel: NSObject, ObservableObject, AVCaptureVideoDataOutputSam
             return
         }
         session.beginConfiguration()
-        session.sessionPreset = .high
+        session.sessionPreset = .hd1280x720
 
         guard let input = try? AVCaptureDeviceInput(device: device) else {
             print("Failed to create camera input")
