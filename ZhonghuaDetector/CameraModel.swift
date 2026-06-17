@@ -80,7 +80,7 @@ final class CameraModel: NSObject, ObservableObject, AVCaptureVideoDataOutputSam
             return
         }
         session.beginConfiguration()
-        session.sessionPreset = .medium
+        session.sessionPreset = .high
 
         guard let input = try? AVCaptureDeviceInput(device: device) else {
             print("Failed to create camera input")
@@ -95,7 +95,6 @@ final class CameraModel: NSObject, ObservableObject, AVCaptureVideoDataOutputSam
         session.addInput(input)
 
         let output = AVCaptureVideoDataOutput()
-        output.videoSettings = [kCVPixelBufferPixelFormatTypeKey as String: kCVPixelFormatType_420YpCbCr8BiPlanarFullRange]
         output.alwaysDiscardsLateVideoFrames = true
         output.setSampleBufferDelegate(self, queue: DispatchQueue(label: "inference", qos: .userInteractive))
 
