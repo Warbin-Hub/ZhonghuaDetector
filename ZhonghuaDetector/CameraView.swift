@@ -53,24 +53,27 @@ struct CameraView: View {
     }
 }
 
-struct CameraPreview: UIViewRepresentable {
+class PreviewVC: UIViewController {
     let session: AVCaptureSession
-    func makeUIView(context: Context) -> UIView {
-        let view = UIView(frame: UIScreen.main.bounds)
+    var previewLayer: AVCaptureVideoPreviewLayer!
+    init(session: AVCaptureSession) { self.session = session; super.init(nibName: nil, bundle: nil) }
+    required init?(coder: NSCoder) { fatalError() }
+    override func viewDidLoad() {
+        super.viewDidLoad()
         view.backgroundColor = .black
-        let preview = AVCaptureVideoPreviewLayer(session: session)
-        preview.frame = view.bounds
-        preview.videoGravity = .resizeAspectFill
-        view.layer.addSublayer(preview)
-        context.coordinator.preview = preview
-        return view
+        previewLayer = AVCaptureVideoPreviewLayer(session: session)
+        previewLayer.frame = view.bounds
+        previewLayer.videoGravity = .resizeAspectFill
+        view.layer.addSublayer(previewLayer)
     }
-    func updateUIView(_ uiView: UIView, context: Context) {
-        CATransaction.begin()
-        CATransaction.setDisableActions(true)
-        context.coordinator.preview?.frame = uiView.bounds
-        CATransaction.commit()
+    override func viewDidLayoutSubviews() {
+        super.viewDidLayoutSubviews()
+        previewLayer.frame = view.bounds
     }
-    func makeCoordinator() -> Coordinator { Coordinator() }
-    class Coordinator { var preview: AVCaptureVideoPreviewLayer? }
+}
+
+struct CameraPreview: UIViewControllerRepresentable {
+    let session: AVCaptureSession
+    func makeUIViewController(context: Context) -> PreviewVC { PreviewVC(session: session) }
+    func updateUIViewController(_ vc: PreviewVC, context: Context) {}
 }
