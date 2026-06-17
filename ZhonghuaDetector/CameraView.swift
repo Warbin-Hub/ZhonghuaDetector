@@ -67,7 +67,7 @@ class PreviewVC: UIViewController {
         view.backgroundColor = .black
         previewLayer = AVCaptureVideoPreviewLayer(session: session)
         previewLayer.frame = view.bounds
-        previewLayer.videoGravity = .resizeAspectFill
+        previewLayer.videoGravity = .resizeAspect
         view.layer.addSublayer(previewLayer)
         onLayer?(previewLayer)
     }
