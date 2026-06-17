@@ -169,11 +169,14 @@ final class CameraModel: NSObject, ObservableObject, AVCaptureVideoDataOutputSam
                 guard obs.labels.first?.identifier == "zhonghua",
                       obs.confidence > 0.3 else { return nil }
                 let b = obs.boundingBox
-                let x = ox + b.minX * scale
-                let y = oy + (1 - b.maxY) * scale
-                let w = b.width * scale
-                let h = b.height * scale
-                return Detection(boundingBox: CGRect(x: x, y: y, width: w, height: h), confidence: obs.confidence)
+                // Vision output is in RAW frame coords (1280w×720h landscape)
+                // Display is rotated 90° → 720w×1280h portrait
+                // Swap X↔Y: Vision width → display height, Vision height → display width
+                let screenX = ox + (1 - b.maxY) * scale
+                let screenY = oy + b.minX * scale
+                let screenW = b.height * scale
+                let screenH = b.width * scale
+                return Detection(boundingBox: CGRect(x: screenX, y: screenY, width: screenW, height: screenH), confidence: obs.confidence)
             }
             Task { @MainActor [weak self] in
                 self?.detections = dets
