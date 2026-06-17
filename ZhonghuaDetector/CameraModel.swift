@@ -40,12 +40,31 @@ final class CameraModel: NSObject, ObservableObject, AVCaptureVideoDataOutputSam
     }
 
     private func loadModel() {
-        guard let url = Bundle.main.url(forResource: "best", withExtension: "mlpackage") else {
-            print("Model file not found in bundle")
+        // Xcode 26+ compiles .mlpackage → .mlmodelc at build time
+        let candidates = [
+            ("best", "mlmodelc"),
+            ("best", "mlpackage"),
+            ("best", "mlmodel"),
+        ]
+        var modelURL: URL?
+        for (name, ext) in candidates {
+            if let url = Bundle.main.url(forResource: name, withExtension: ext) {
+                modelURL = url
+                print("Found model: \(url.lastPathComponent)")
+                break
+            }
+        }
+        guard let url = modelURL else {
+            print("Model not found. Bundle contents:")
+            if let bundlePath = Bundle.main.resourcePath {
+                for f in (try? FileManager.default.contentsOfDirectory(atPath: bundlePath)) ?? [] {
+                    if f.hasPrefix("best") || f.hasPrefix("Model") { print("  \(f)") }
+                }
+            }
             return
         }
         do {
-            let compiledURL = try MLModel.compileModel(at: url)
+            let compiledURL = url.pathExtension == "mlpackage" ? try MLModel.compileModel(at: url) : url
             let mlModel = try MLModel(contentsOf: compiledURL)
             modelHolder.model = try VNCoreMLModel(for: mlModel)
             modelReady = true
