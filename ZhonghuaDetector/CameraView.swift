@@ -7,7 +7,7 @@ struct CameraView: View {
     var body: some View {
         ZStack {
             GeometryReader { geo in
-                CameraPreview(session: model.session)
+                CameraPreview(session: model.session, onLayer: { layer in model.setPreviewLayer(layer) })
                     .onAppear { model.previewSize = geo.size }
                     .onChange(of: geo.size) { model.previewSize = $0 }
             }.ignoresSafeArea()
@@ -58,6 +58,7 @@ struct CameraView: View {
 
 class PreviewVC: UIViewController {
     let session: AVCaptureSession
+    var onLayer: ((AVCaptureVideoPreviewLayer) -> Void)?
     var previewLayer: AVCaptureVideoPreviewLayer!
     init(session: AVCaptureSession) { self.session = session; super.init(nibName: nil, bundle: nil) }
     required init?(coder: NSCoder) { fatalError() }
@@ -68,6 +69,7 @@ class PreviewVC: UIViewController {
         previewLayer.frame = view.bounds
         previewLayer.videoGravity = .resizeAspectFill
         view.layer.addSublayer(previewLayer)
+        onLayer?(previewLayer)
     }
     override func viewDidLayoutSubviews() {
         super.viewDidLayoutSubviews()
@@ -77,6 +79,11 @@ class PreviewVC: UIViewController {
 
 struct CameraPreview: UIViewControllerRepresentable {
     let session: AVCaptureSession
-    func makeUIViewController(context: Context) -> PreviewVC { PreviewVC(session: session) }
+    var onLayer: ((AVCaptureVideoPreviewLayer) -> Void)?
+    func makeUIViewController(context: Context) -> PreviewVC {
+        let vc = PreviewVC(session: session)
+        vc.onLayer = onLayer
+        return vc
+    }
     func updateUIViewController(_ vc: PreviewVC, context: Context) {}
 }

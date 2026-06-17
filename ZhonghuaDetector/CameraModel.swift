@@ -10,6 +10,7 @@ struct Detection: Identifiable {
 
 final class ModelHolder: @unchecked Sendable {
     var model: VNCoreMLModel?
+    var previewLayer: AVCaptureVideoPreviewLayer?
 }
 
 @MainActor
@@ -20,6 +21,7 @@ final class CameraModel: NSObject, ObservableObject, AVCaptureVideoDataOutputSam
     @Published var cameraReady = false
     @Published var modelReady = false
     nonisolated(unsafe) var previewSize: CGSize = .zero
+    func setPreviewLayer(_ layer: AVCaptureVideoPreviewLayer) { modelHolder.previewLayer = layer }
 
     private let modelHolder = ModelHolder()
     private var fpsCounter: Int = 0
@@ -145,20 +147,14 @@ final class CameraModel: NSObject, ObservableObject, AVCaptureVideoDataOutputSam
 
         Task { @MainActor in self.fpsCounter += 1 }
 
-        let screenW = previewSize.width
-        let screenH = previewSize.height
-        let request = VNCoreMLRequest(model: vnModel) { req, _ in
+        let request = VNCoreMLRequest(model: vnModel) { [weak self] req, _ in
+            guard let self, let layer = self.modelHolder.previewLayer else { return }
             guard let results = req.results as? [VNRecognizedObjectObservation] else { return }
             let dets = results.compactMap { obs -> Detection? in
                 guard obs.labels.first?.identifier == "zhonghua",
                       obs.confidence > 0.3 else { return nil }
-                let bbox = obs.boundingBox
-                // Direct mapping: Vision coords are 0-1, origin bottom-left
-                let x = bbox.minX * screenW
-                let y = (1 - bbox.maxY) * screenH
-                let w = bbox.width * screenW
-                let h = bbox.height * screenH
-                return Detection(boundingBox: CGRect(x: x, y: y, width: w, height: h), confidence: obs.confidence)
+                let rect = layer.layerRectConverted(fromMetadataOutputRect: obs.boundingBox)
+                return Detection(boundingBox: rect, confidence: obs.confidence)
             }
             Task { @MainActor [weak self] in
                 self?.detections = dets
