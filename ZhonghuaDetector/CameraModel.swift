@@ -80,7 +80,7 @@ final class CameraModel: NSObject, ObservableObject, AVCaptureVideoDataOutputSam
             return
         }
         session.beginConfiguration()
-        session.sessionPreset = .vga640x480
+        session.sessionPreset = .medium
 
         guard let input = try? AVCaptureDeviceInput(device: device) else {
             print("Failed to create camera input")
@@ -108,7 +108,8 @@ final class CameraModel: NSObject, ObservableObject, AVCaptureVideoDataOutputSam
 
         if let conn = output.connection(with: .video) {
             if #available(iOS 17.0, *) {
-                conn.videoRotationAngle = 0
+                conn.videoRotationAngle = 90
+                conn.videoOrientation = .portrait
             }
         }
 

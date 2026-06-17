@@ -6,11 +6,7 @@ struct CameraView: View {
 
     var body: some View {
         ZStack {
-            if model.cameraReady {
-                CameraPreview(session: model.session).ignoresSafeArea()
-            } else {
-                Color.black.ignoresSafeArea()
-            }
+            CameraPreview(session: model.session).ignoresSafeArea()
 
             ForEach(model.detections, id: \.id) { det in
                 let rect = model.visionToScreen(det.boundingBox)
@@ -60,15 +56,20 @@ struct CameraView: View {
 struct CameraPreview: UIViewRepresentable {
     let session: AVCaptureSession
     func makeUIView(context: Context) -> UIView {
-        let view = UIView()
+        let view = UIView(frame: UIScreen.main.bounds)
+        view.backgroundColor = .black
         let preview = AVCaptureVideoPreviewLayer(session: session)
+        preview.frame = view.bounds
         preview.videoGravity = .resizeAspectFill
         view.layer.addSublayer(preview)
         context.coordinator.preview = preview
         return view
     }
     func updateUIView(_ uiView: UIView, context: Context) {
+        CATransaction.begin()
+        CATransaction.setDisableActions(true)
         context.coordinator.preview?.frame = uiView.bounds
+        CATransaction.commit()
     }
     func makeCoordinator() -> Coordinator { Coordinator() }
     class Coordinator { var preview: AVCaptureVideoPreviewLayer? }
