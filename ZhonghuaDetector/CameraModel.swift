@@ -19,7 +19,7 @@ final class CameraModel: NSObject, ObservableObject, AVCaptureVideoDataOutputSam
     @Published var fps: Double = 0
     @Published var cameraReady = false
     @Published var modelReady = false
-    var previewSize: CGSize = .zero
+    nonisolated(unsafe) var previewSize: CGSize = .zero
 
     private let modelHolder = ModelHolder()
     private var fpsCounter: Int = 0
@@ -145,26 +145,20 @@ final class CameraModel: NSObject, ObservableObject, AVCaptureVideoDataOutputSam
 
         Task { @MainActor in self.fpsCounter += 1 }
 
-        let request = VNCoreMLRequest(model: vnModel) { [weak self] req, _ in
-            guard let self else { return }
+        let screenW = previewSize.width
+        let screenH = previewSize.height
+        let request = VNCoreMLRequest(model: vnModel) { req, _ in
             guard let results = req.results as? [VNRecognizedObjectObservation] else { return }
-            let ps = Task { @MainActor in self.previewSize }.value
-            // Actually, capture self.previewSize directly since we're already capturing self
             let dets = results.compactMap { obs -> Detection? in
                 guard obs.labels.first?.identifier == "zhonghua",
                       obs.confidence > 0.3 else { return nil }
-                // Convert Vision coords (bottom-left origin, 0-1) to screen coords (top-left, points)
                 let bbox = obs.boundingBox
-                let screenW = self.previewSize.width
-                let screenH = self.previewSize.height
-                // Scale to fill screen (matches .resizeAspectFill)
                 let scale = max(screenW / bbox.width, screenH / bbox.height)
                 let vw = bbox.width * scale
                 let vh = bbox.height * scale
                 let x = (screenW - vw) / 2 + (1 - bbox.maxY) * vw
                 let y = (screenH - vh) / 2 + bbox.minX * vh
-                let r = CGRect(x: x, y: y, width: vw, height: vh)
-                return Detection(boundingBox: r, confidence: obs.confidence)
+                return Detection(boundingBox: CGRect(x: x, y: y, width: vw, height: vh), confidence: obs.confidence)
             }
             Task { @MainActor [weak self] in
                 self?.detections = dets
