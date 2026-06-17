@@ -147,34 +147,30 @@ final class CameraModel: NSObject, ObservableObject, AVCaptureVideoDataOutputSam
 
         Task { @MainActor in self.fpsCounter += 1 }
 
+        let frameW = CGFloat(CVPixelBufferGetWidth(pixelBuffer))
+        let frameH = CGFloat(CVPixelBufferGetHeight(pixelBuffer))
         let request = VNCoreMLRequest(model: vnModel) { [weak self] req, _ in
             guard let self else { return }
             guard let results = req.results as? [VNRecognizedObjectObservation] else { return }
             let screenW = UIScreen.main.bounds.width
             let screenH = UIScreen.main.bounds.height
+            let cameraAR = frameW / frameH // actual camera aspect ratio
+            let screenAR = screenW / screenH
+            // scaleFit: use smaller scale factor to fit full image
+            var scale: CGFloat, ox: CGFloat = 0, oy: CGFloat = 0
+            if cameraAR > screenAR {
+                scale = screenW
+                oy = (screenH - screenW / cameraAR) / 2
+            } else {
+                scale = screenH * cameraAR
+                ox = (screenW - scale) / 2
+            }
             let dets = results.compactMap { obs -> Detection? in
                 guard obs.labels.first?.identifier == "zhonghua",
                       obs.confidence > 0.3 else { return nil }
                 let b = obs.boundingBox
-                // Vision: origin bottom-left, normalized 0-1
-                // scaleFit means full image visible with letterbox
-                // Camera AR (1080/1920 ≈ 0.5625) vs screen AR (393/852 ≈ 0.461)
-                // scaleFit uses the smaller scale factor → camera width fills screen, top/bottom letterboxed
-                let cameraAR: CGFloat = 9.0 / 16.0  // landscape sensor, portrait display: w/h = 9/16
-                let screenAR = screenW / screenH
-                var scale: CGFloat, offsetX: CGFloat = 0, offsetY: CGFloat = 0
-                if cameraAR > screenAR {
-                    // camera wider → letterbox top/bottom
-                    scale = screenW
-                    let dispH = screenW / cameraAR
-                    offsetY = (screenH - dispH) / 2
-                } else {
-                    // camera taller → letterbox left/right
-                    scale = screenH / cameraAR
-                    offsetX = (screenW - scale) / 2
-                }
-                let x = offsetX + b.minX * scale
-                let y = offsetY + (1 - b.maxY) * scale
+                let x = ox + b.minX * scale
+                let y = oy + (1 - b.maxY) * scale
                 let w = b.width * scale
                 let h = b.height * scale
                 return Detection(boundingBox: CGRect(x: x, y: y, width: w, height: h), confidence: obs.confidence)
